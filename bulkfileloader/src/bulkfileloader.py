@@ -11,6 +11,7 @@ from time import gmtime, strftime
 import decimal
 import pika
 import pymongo
+import codecs
 
 config = {}
 logger = logging.getLogger("GlobalLog")
@@ -29,15 +30,21 @@ def initLog():
 
 def processFile(path,collection):
 	logger.info("Processing: "+path)
-	with open(path) as itemFile: 
+	with codecs.open(path,'r',errors='ignore',encoding='utf-8') as itemFile:
+	#with open(path) as itemFile: 
     		aItem = json.load(itemFile)
 		if "dependencies" in aItem: 
 	    		stripEm(aItem)
 		collection.insert(aItem)
 
 def stripEm(aItem):
+	r = {}
 	for key in aItem["dependencies"]:
-		aItem["dependencies"][key.replace('.','')] = aItem["dependencies"].pop(key)
+		old = key
+		new = key.replace('.','')
+		r[old] = new
+	for key in r:
+		aItem["dependencies"][r[key]] = aItem["dependencies"].pop(key)
 
 def processQueueItem(ch, method, properties, body):
 	    aItem = json.loads(body)
