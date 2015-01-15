@@ -30,12 +30,17 @@ def initLog():
 def processFile(path,collection):
 	logger.info("Processing: "+path)
 	with open(path) as itemFile: 
-    		aItem = json.loads(itemFile)
+    		aItem = json.load(itemFile)
+		if "dependencies" in aItem: 
+	    		stripEm(aItem)
 		collection.insert(aItem)
+
+def stripEm(aItem):
+	for key in aItem["dependencies"]:
+		aItem["dependencies"][key.replace('.','')] = aItem["dependencies"].pop(key)
 
 def processQueueItem(ch, method, properties, body):
 	    aItem = json.loads(body)
-	    print("Processing: "+aItem["_id"])
 	    processItem(aItem,overrides)
 	    fpath=str(config["outputFilePath"]+"/"+aPart["_id"]+".json".replace(" ","\ ").encode('ascii','ignore'))
 	    print("Path: "+fpath)
@@ -67,6 +72,7 @@ def main(argv):
 		os.chdir(config["inputDirectory"])
 		count=0
 		for jsonFiles in glob.glob("*.json"):
+			print("Processing: "+config["inputDirectory"]+'/'+jsonFiles)
 			processFile(config["inputDirectory"]+'/'+jsonFiles,collection)
 			count = count+1
 	else:
